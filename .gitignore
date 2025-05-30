@@ -1,0 +1,63 @@
+# === Node.js ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.*.local
+*.local
+
+# === React (Create React App) ===
+build/
+dist/
+*.log
+*.env
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# === Python / Flask ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pkl
+*.db
+*.sqlite3
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-log.txt
+*.log
+.env
+.venv/
+venv/
+ENV/
+env/
+.mypy_cache/
+.pytest_cache/
+.coverage
+.tox/
+htmlcov/
+instance/
+.webassets-cache
+
+# === VSCode / IDEs ===
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# === Mac / OS ===
+.DS_Store
+Thumbs.db
+
+# === Misc ===
+*.bak
+*.swp
+*.tmp
+
