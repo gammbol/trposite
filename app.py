@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from solver import solve_equation
+from services.solver_service import solve
 from models import history, add_to_history
 
 app = Flask(__name__)
@@ -19,7 +19,13 @@ def solve():
         if not equation:
             return jsonify({'error': 'Уравнение не передано'}), 400
 
-        steps, solution = solve_equation(equation, variable)
+        if not isinstance(equation, str):
+            return jsonify({'error': 'Некорректный формат уравнения'}), 400
+
+        result = solve(equation, variable)
+        steps = result["steps"]
+        solution = result["solution"]
+
         add_to_history(equation, steps, solution)
 
         return jsonify({
