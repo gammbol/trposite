@@ -7,6 +7,19 @@ from models import history, add_to_history
 app = Flask(__name__)
 CORS(app)  # разрешаем CORS для всех источников (можно ограничить)
 
+def success_response(data, meta=None):
+    return {
+        "status": "success",
+        "data": data,
+        "meta": meta or {}
+    }
+
+def error_response(message):
+    return {
+        "status": "error",
+        "error": message
+    }
+
 @app.route('/api/solve', methods=['POST'])
 def solve():
     try:
@@ -28,14 +41,20 @@ def solve():
 
         add_to_history(equation, steps, solution)
 
-        return jsonify({
-            'steps': steps,
-            'solution': solution
-        })
+        return jsonify(success_response(
+            {
+                "steps": steps,
+                "solution": solution
+            },
+            {
+                "equation": equation,
+                "variable": variable
+            }
+        ))
 
     except Exception as e:
         print(f"[ОШИБКА] {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify(error_response(str(e))), 500
 
 
 @app.route('/api/history', methods=['GET'])
