@@ -1,14 +1,26 @@
 from services.solver import solve_equation
+from models import add_to_history
 
-def solve(equation: str, variable: str = "x"):
-    """
-    High-level solver service.
-    Acts as an abstraction layer for equation solving logic.
-    """
 
-    steps, solution = solve_equation(equation, variable)
+def process_job(job):
+    try:
+        job["status"] = "processing"
 
-    return {
-        "steps": steps,
-        "solution": solution
-    }
+        steps, solution = solve_equation(
+            job["equation"],
+            job["variable"]
+        )
+
+        job["status"] = "done"
+        job["result"] = {
+            "steps": steps,
+            "solution": solution
+        }
+
+        add_to_history(job["equation"], steps, solution)
+
+    except Exception as e:
+        job["status"] = "error"
+        job["error"] = str(e)
+
+    return job

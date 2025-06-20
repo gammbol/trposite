@@ -1,7 +1,8 @@
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from services.solver_service import solve
+from services.job_manager import create_job, get_job
+from services.solver_service import process_job
 from models import history, add_to_history
 
 app = Flask(__name__)
@@ -24,37 +25,47 @@ def error_response(message):
 def solve():
     try:
         data = request.get_json()
-        print(f"[API] Получены данные: {data}")
 
         equation = data.get('equation')
         variable = data.get('variable', 'x')
 
         if not equation:
-            return jsonify({'error': 'Уравнение не передано'}), 400
+            return jsonify(error_response("Equation is required")), 400
 
-        if not isinstance(equation, str):
-            return jsonify({'error': 'Некорректный формат уравнения'}), 400
+        job = create_job(equation, variable)
 
-        result = solve(equation, variable)
-        steps = result["steps"]
-        solution = result["solution"]
-
-        add_to_history(equation, steps, solution)
+        # имитация async (но пока sync)
+        process_job(job)
 
         return jsonify(success_response(
-            {
-                "steps": steps,
-                "solution": solution
-            },
-            {
-                "equation": equation,
-                "variable": variable
-            }
+            {"job_id": job["id"]},
+            {"status": job["status"]}
         ))
 
     except Exception as e:
-        print(f"[ОШИБКА] {str(e)}")
         return jsonify(error_response(str(e))), 500
+
+
+@app.route('/api/result/<job_id>', methods=['GET'])
+def get_result(job_id):
+    job = get_job(job_id)
+
+    if not job:
+        return jsonify(error_response("Job not found")), 404
+
+    if job["status"] == "done":
+        return jsonify(success_response(
+            job["result"],
+            {"status": job["status"]}
+        ))
+
+    if job["status"] == "error":
+        return jsonify(error_response(job["error"])), 500
+
+    return jsonify(success_response(
+        None,
+        {"status": job["status"]}
+    ))
 
 
 @app.route('/api/history', methods=['GET'])
