@@ -1,21 +1,19 @@
-from services.solver import solve_equation
-from models import add_to_history
+from services.solver.dispatcher import SolverDispatcher
+
+dispatcher = SolverDispatcher()
 
 
 def process_job(job):
     try:
         job["status"] = "processing"
 
-        steps, solution = solve_equation(
+        result = dispatcher.solve(
             job["equation"],
             job["variable"]
         )
 
         job["status"] = "done"
-        job["result"] = {
-            "steps": steps,
-            "solution": solution
-        }
+        job["result"] = result
 
         add_to_history(job["equation"], steps, solution)
 
