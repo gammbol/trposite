@@ -1,7 +1,0 @@
-flask
-flask-cors
-sympy
-
-# considering migration to django for better scalability
-django
-djangorestframework
