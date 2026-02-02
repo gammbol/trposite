@@ -24,6 +24,9 @@ def process_job(job):
             steps=steps
         )
 
+    except ValueError as e:
+        job["status"] = "error"
+        job["error"] = str(e)
     except Exception as e:
         job["status"] = "error"
         job["error"] = str(e)

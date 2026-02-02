@@ -4,15 +4,16 @@ from sympy.printing.latex import latex
 
 
 def solve_equation(equation_str, variable_str='x'):
-    x = symbols(variable_str)
-    y = Function('y')(x)
+    try:
+        x = symbols(variable_str)
+        y = Function('y')(x)
 
-    lhs, rhs = equation_str.split('=')
+        lhs, rhs = equation_str.split('=')
 
-    eq = Eq(
-        parse_expr(lhs),
-        parse_expr(rhs)
-    )
+        eq = Eq(parse_expr(lhs), parse_expr(rhs))
+
+    except Exception as e:
+        raise ValueError(f"Invalid equation format: {str(e)}")
 
     sol = dsolve(eq, y)
     simplified = simplify(sol.rhs)
