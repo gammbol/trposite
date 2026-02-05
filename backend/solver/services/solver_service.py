@@ -1,5 +1,6 @@
 from .sympy_solver import solve_equation
 from history.models import Solution
+from .fallback_solver import fallback_solution
 
 
 def process_job(job):
@@ -27,8 +28,9 @@ def process_job(job):
     except ValueError as e:
         job["status"] = "error"
         job["error"] = str(e)
-    except Exception as e:
-        job["status"] = "error"
-        job["error"] = str(e)
-
+    except Exception:
+        result = fallback_solution(job["equation"])
+        job["status"] = "done"
+        job["result"] = result
+        
     return job
