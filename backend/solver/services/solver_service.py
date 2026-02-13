@@ -1,4 +1,4 @@
-from .sympy_solver import solve_equation
+from solver.services.solvers.sympy_solver import solve_equation
 from history.models import Solution
 from .fallback_solver import fallback_solution
 
@@ -32,5 +32,5 @@ def process_job(job):
         result = fallback_solution(job["equation"])
         job["status"] = "done"
         job["result"] = result
-        
+
     return job
