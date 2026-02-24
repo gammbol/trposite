@@ -1,12 +1,14 @@
 from .sympy_solver import SympySolver
 from .fallback_solver import FallbackSolver
+from .ai_solver import AISolver
 
 
 class SolverDispatcher:
     def __init__(self):
         self.solvers = [
             SympySolver(),
-            FallbackSolver()
+            AISolver(),
+            FallbackSolver(),
         ]
 
     def solve(self, equation, variable):

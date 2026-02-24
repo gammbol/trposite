@@ -1,6 +1,6 @@
 from solver.services.solvers.sympy_solver import solve_equation
 from history.models import Solution
-from .fallback_solver import fallback_solution
+from solver.services.solvers.fallback_solver import fallback_solution
 
 
 def process_job(job):
