@@ -4,18 +4,20 @@ from .ai_solver import AISolver
 
 
 class SolverDispatcher:
+
     def __init__(self):
         self.solvers = [
             SympySolver(),
             AISolver(),
-            FallbackSolver(),
+            FallbackSolver()
         ]
 
     def solve(self, equation, variable):
         for solver in self.solvers:
-            try:
-                return solver.solve(equation, variable)
-            except Exception:
-                continue
+            if solver.can_solve(equation):
+                try:
+                    return solver.solve(equation, variable)
+                except Exception:
+                    continue
 
-        raise Exception("No solver available")
+        raise Exception("No solver could handle the equation")

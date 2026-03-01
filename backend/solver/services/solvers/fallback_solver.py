@@ -1,7 +1,11 @@
-def fallback_solution(equation):
-    return {
-        "steps": [
-            {"type": "text", "content": "Не удалось найти аналитическое решение"}
-        ],
-        "solution": "No analytical solution found"
-    }
+from .base_solver import BaseSolver
+
+class FallbackSolver(BaseSolver):
+
+    def solve(self, equation, variable):
+        return {
+            "steps": [
+                {"type": "text", "content": "Не удалось решить уравнение"}
+            ],
+            "solution": "No solution"
+        }

@@ -1,30 +1,81 @@
-from sympy import symbols, Function, Eq, dsolve, simplify
+from sympy import (
+    symbols, Eq, Function, Derivative, simplify,
+    dsolve, integrate, exp, log
+)
 from sympy.parsing.sympy_parser import parse_expr
+from sympy.solvers.ode.ode import classify_ode
 from sympy.printing.latex import latex
 
+from .base_solver import BaseSolver
 
-def solve_equation(equation_str, variable_str='x'):
-    try:
+
+class SympySolver(BaseSolver):
+
+    def can_solve(self, equation: str) -> bool:
+        # пока считаем, что sympy пробует всё
+        return True
+
+    def solve(self, equation_str: str, variable_str: str = 'x'):
         x = symbols(variable_str)
         y = Function('y')(x)
+        C = symbols('C')
 
-        lhs, rhs = equation_str.split('=')
+        local_dict = {
+            'x': x,
+            'y': y,
+            'Derivative': Derivative,
+            'exp': exp,
+            'log': log
+        }
 
-        eq = Eq(parse_expr(lhs), parse_expr(rhs))
+        steps = []
 
-    except Exception as e:
-        raise ValueError(f"Invalid equation format: {str(e)}")
+        def make_step(content, step_type="text"):
+            return {"type": step_type, "content": content}
 
-    sol = dsolve(eq, y)
-    simplified = simplify(sol.rhs)
+        # --- парсинг уравнения ---
+        try:
+            lhs, rhs = equation_str.split('=')
 
-    steps = [
-        {"type": "text", "content": "Решаем дифференциальное уравнение"},
-        {"type": "math", "content": latex(eq)},
-        {"type": "text", "content": "Общее решение:"},
-        {"type": "math", "content": latex(sol)},
-        {"type": "text", "content": "Упрощённый вид:"},
-        {"type": "math", "content": latex(simplified)},
-    ]
+            lhs_expr = parse_expr(lhs.strip(), local_dict=local_dict)
+            rhs_expr = parse_expr(rhs.strip(), local_dict=local_dict)
 
-    return steps, f"y(x) = {latex(simplified)}"
+            eq = Eq(lhs_expr, rhs_expr)
+
+            steps.append(make_step("Введённое уравнение:"))
+            steps.append(make_step(latex(eq), "math"))
+
+        except Exception as e:
+            raise ValueError(f"Ошибка разбора уравнения: {e}")
+
+        # --- классификация ---
+        try:
+            classification = classify_ode(eq, y)
+            classification_str = ', '.join(classification)
+
+            steps.append(make_step("Классификация уравнения:"))
+            steps.append(make_step(classification_str))
+
+        except Exception:
+            steps.append(make_step("Не удалось классифицировать уравнение"))
+
+        # --- попытка решения через dsolve ---
+        try:
+            steps.append(make_step("Решаем уравнение с помощью SymPy (dsolve):"))
+
+            sol = dsolve(eq, y)
+            simplified = simplify(sol.rhs)
+
+            steps.append(make_step("Общее решение:"))
+            steps.append(make_step(latex(sol), "math"))
+
+            steps.append(make_step("Упрощённое решение:"))
+            steps.append(make_step(f"y(x) = {latex(simplified)}", "math"))
+
+            return {
+                "steps": steps,
+                "solution": f"y(x) = {latex(simplified)}"
+            }
+
+        except Exception as e:
+            raise Exception(f"Ошибка при решении через SymPy: {e}")
