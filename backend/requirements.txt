@@ -4,3 +4,4 @@ djangorestframework==3.17.1
 sqlparse==0.5.5
 tzdata==2026.1
 sympy
+openai
