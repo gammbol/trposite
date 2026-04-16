@@ -41,9 +41,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'solver',
     'history',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -129,3 +132,7 @@ TEMPLATES[0]['DIRS'] = [
 
 
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
