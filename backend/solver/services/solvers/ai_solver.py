@@ -58,5 +58,19 @@ class AISolver(BaseSolver):
                     "solution": content
                 }
 
+
         except Exception as e:
-            raise Exception(f"AI solver error: {str(e)}")
+
+            return {
+
+                "steps": [
+
+                    {"type": "text", "content": "Ошибка AI-решателя"},
+
+                    {"type": "text", "content": str(e)}
+
+                ],
+
+                "solution": "Не удалось получить решение через AI"
+
+            }

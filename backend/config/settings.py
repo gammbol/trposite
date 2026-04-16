@@ -131,7 +131,7 @@ TEMPLATES[0]['DIRS'] = [
 ]
 
 
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+OPENAI_API_KEY = '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'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",

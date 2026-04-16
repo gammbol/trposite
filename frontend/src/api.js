@@ -1,11 +1,15 @@
 import axios from 'axios';
 
-export const solveEquation = async (equation, variable = 'x') => {
-  const response = await axios.post(`${process.env.REACT_APP_API_URL || "http://localhost:8000/api"}/solve`, {
-    equation,
-    variable
+export const solveEquation = async (data) => {
+  const response = await fetch("http://localhost:8000/api/solve/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
   });
-  return response.data;
+
+  return response.json();
 };
 
 export const getHistory = async () => {
