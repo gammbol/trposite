@@ -6,18 +6,16 @@ from .ai_solver import AISolver
 class SolverDispatcher:
 
     def __init__(self):
-        self.solvers = [
-            SympySolver(),
-            AISolver(),
-            FallbackSolver()
-        ]
+        self.solvers = {
+            "sympy": SympySolver(),
+            "ai": AISolver(),
+            "fallback": FallbackSolver()
+        }
 
-    def solve(self, equation, variable):
-        for solver in self.solvers:
-            if solver.can_solve(equation):
-                try:
-                    return solver.solve(equation, variable)
-                except Exception:
-                    continue
+    def solve(self, equation, variable, solver_name="sympy"):
+        solver = self.solvers.get(solver_name)
 
-        raise Exception("No solver could handle the equation")
+        if not solver:
+            raise ValueError(f"Unknown solver: {solver_name}")
+
+        return solver.solve(equation, variable)

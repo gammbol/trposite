@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from .serializers import SolveSerializer
 from .services.solver_service import process_job
 from .services.job_manager import create_job, get_job
+from .services.solvers.dispatcher import SolverDispatcher
 
 
 class SolveView(APIView):
@@ -12,17 +13,23 @@ class SolveView(APIView):
 
         data = serializer.validated_data
 
+        solver_name = request.data.get("solver", "sympy")
+
         job = create_job(
             data["equation"],
             data.get("variable", "x")
         )
 
-        process_job(job)
+        result = SolverDispatcher().solve(
+            data["equation"],
+            data.get("variable", "x"),
+            solver_name
+        )
 
-        return Response({
-            "job_id": job["id"],
-            "status": job["status"]
-        })
+        job["status"] = "done"
+        job["result"] = result
+
+        return Response(job)
 
 
 class ResultView(APIView):
