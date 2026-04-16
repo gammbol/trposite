@@ -1,6 +1,6 @@
 from .sympy_solver import SympySolver
-from .fallback_solver import FallbackSolver
 from .ai_solver import AISolver
+from .fallback_solver import FallbackSolver
 
 
 class SolverDispatcher:

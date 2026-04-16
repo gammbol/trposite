@@ -1,0 +1,89 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  background: #fff;
+  color: #1b1b1b;
+}
+
+.page {
+  padding: 4rem;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.hero {
+  text-align: center;
+  padding: 5rem 2rem;
+  background: #f3f3f3;
+  border-radius: 12px;
+}
+
+.hero h1 {
+  font-size: 2.8rem;
+  margin-bottom: 1rem;
+  color: #1b1b1b;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: #4a4a4a;
+  margin-bottom: 2rem;
+}
+
+.primary-button,
+.secondary-button {
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  margin-right: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.primary-button {
+  background-color: #0067b8;
+  color: white;
+}
+
+.primary-button:hover {
+  background-color: #0078d4;
+}
+
+.secondary-button {
+  background-color: #e6e6e6;
+  color: #1b1b1b;
+}
+
+.secondary-button:hover {
+  background-color: #cccccc;
+}
+
+input[type="text"] {
+  width: 60%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-right: 1rem;
+}
+
+.form {
+  margin-bottom: 2rem;
+}
+
+.help-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-left: 4px solid #0078d4;
+  border-radius: 6px;
+}
+
+.solution {
+  margin-top: 2rem;
+  background: #f7f7f7;
+  padding: 1.5rem;
+  border-radius: 10px;
+}
+
