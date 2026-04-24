@@ -2,6 +2,7 @@ from .sympy_solver import SympySolver
 from .ai_solver import AISolver
 from .deepseek_solver import DeepSeekSolver
 from .fallback_solver import FallbackSolver
+from .ollama_solver import OllamaSolver
 
 
 class SolverDispatcher:
@@ -11,6 +12,7 @@ class SolverDispatcher:
             "sympy": SympySolver(),
             "ai": AISolver(),
             "deepseek": DeepSeekSolver(),
+            "ollama": OllamaSolver(),
             "fallback": FallbackSolver()
         }
 
