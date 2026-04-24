@@ -68,6 +68,7 @@ export default function Solver() {
           >
             <option value="sympy">⚡ SymPy (быстро)</option>
             <option value="ai">🧠 AI (умнее)</option>
+            <option value="deepseek">DeepSeek</option>
           </select>
 
           <button className="primary-button" type="submit" disabled={loading}>
