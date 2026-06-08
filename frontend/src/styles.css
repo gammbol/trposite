@@ -30,15 +30,23 @@ body {
   margin-bottom: 2rem;
 }
 
+.solver-subtitle {
+  margin: 0.75rem 0 1.75rem;
+  max-width: 760px;
+  color: #5a5a5a;
+  line-height: 1.5;
+}
+
 .primary-button,
-.secondary-button {
+.secondary-button,
+.ai-button {
   font-size: 1rem;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
   border: none;
   margin-right: 1rem;
   cursor: pointer;
-  transition: background 0.3s;
+  transition: background 0.3s, opacity 0.3s;
 }
 
 .primary-button {
@@ -59,6 +67,23 @@ body {
   background-color: #cccccc;
 }
 
+.ai-button {
+  background: #222;
+  color: #fff;
+  margin-top: 0.75rem;
+}
+
+.ai-button:hover {
+  background: #3a3a3a;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.ai-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 input[type="text"] {
   width: 60%;
   padding: 0.75rem;
@@ -72,11 +97,23 @@ input[type="text"] {
   margin-bottom: 2rem;
 }
 
+.controls {
+  margin-top: 1rem;
+}
+
 .help-box {
   margin-top: 1rem;
   padding: 1rem;
   background-color: #f9f9f9;
   border-left: 4px solid #0078d4;
+  border-radius: 6px;
+}
+
+.error-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fff2f2;
+  border-left: 4px solid #c62828;
   border-radius: 6px;
 }
 
@@ -87,3 +124,75 @@ input[type="text"] {
   border-radius: 10px;
 }
 
+.solution-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.verification-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.verification-badge.verified {
+  background: #e6f4ea;
+  color: #176b35;
+}
+
+.ai-action {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #ddd;
+}
+
+.ai-action p {
+  color: #555;
+  line-height: 1.5;
+}
+
+.ai-solution {
+  border: 1px solid #dedede;
+}
+
+.verification-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.verification-summary span {
+  padding: 0.4rem 0.65rem;
+  border-radius: 6px;
+  background: #ededed;
+  font-size: 0.9rem;
+}
+
+.ai-final-answer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding: 2rem 1rem;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .solution-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

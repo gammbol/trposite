@@ -1,41 +1,72 @@
-from rest_framework.views import APIView
+from rest_framework import status
 from rest_framework.response import Response
-from .serializers import SolveSerializer
-from .services.solver_service import process_job
+from rest_framework.views import APIView
+
+from .serializers import ExplainSerializer, SolveSerializer
+from .services.ai.explanation_service import AIExplanationError, AIExplanationService
 from .services.job_manager import create_job, get_job
-from .services.solvers.dispatcher import SolverDispatcher
+from .services.solvers.sympy_solver import SympySolver
 
 
 class SolveView(APIView):
+    """Fast deterministic solving path. The public endpoint always uses SymPy."""
+
     def post(self, request):
         serializer = SolveSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         data = serializer.validated_data
 
-        solver_name = request.data.get("solver", "sympy")
+        equation = data["equation"]
+        variable = data.get("variable", "x")
+        job = create_job(equation, variable)
 
-        job = create_job(
-            data["equation"],
-            data.get("variable", "x")
-        )
+        try:
+            result = SympySolver().solve(equation, variable)
+            job["status"] = "done"
+            job["result"] = result
+            return Response(job)
+        except Exception as exc:
+            job["status"] = "error"
+            job["error"] = str(exc)
+            return Response(
+                job,
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
 
-        result = SolverDispatcher().solve(
-            data["equation"],
-            data.get("variable", "x"),
-            solver_name
-        )
 
-        job["status"] = "done"
-        job["result"] = result
+class ExplainView(APIView):
+    """AI explanation path with independent verification and self-correction."""
 
-        return Response(job)
+    def post(self, request):
+        serializer = ExplainSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            result = AIExplanationService().explain(
+                equation=data["equation"],
+                variable=data.get("variable", "x"),
+            )
+            return Response(result)
+        except AIExplanationError as exc:
+            return Response(
+                {
+                    "error": str(exc),
+                    "verification": exc.verification,
+                    "attempts": exc.attempts,
+                },
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+        except Exception as exc:
+            return Response(
+                {"error": f"Не удалось получить AI-объяснение: {exc}"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
 
 class ResultView(APIView):
     def get(self, request, job_id):
         job = get_job(job_id)
-
         if not job:
             return Response({"error": "Not found"}, status=404)
 
