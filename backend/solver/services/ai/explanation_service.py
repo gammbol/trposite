@@ -1,8 +1,5 @@
 from solver.services.solvers.ollama_solver import OllamaSolver
-from solver.services.verification.solution_verifier import (
-    SolutionVerifier,
-    VerificationError,
-)
+from solver.services.verification import MultiStageVerificationEngine, VerificationError
 
 
 class AIExplanationError(RuntimeError):
@@ -14,16 +11,18 @@ class AIExplanationError(RuntimeError):
 
 class AIExplanationService:
     """
-    Generates an explanation with a local LLM and independently verifies the
-    solution produced by the model. Failed candidates are returned to the LLM
-    with mathematical feedback for self-correction.
+    Generates an explanation with a local LLM and independently verifies every
+    candidate through the multi-stage mathematical verification engine.
+
+    Failed candidates are returned to the model with precise diagnostic data,
+    forming a bounded self-correction loop.
     """
 
     MAX_ATTEMPTS = 3
 
     def __init__(self, model=None, verifier=None):
         self.model = model or OllamaSolver()
-        self.verifier = verifier or SolutionVerifier()
+        self.verifier = verifier or MultiStageVerificationEngine()
 
     def explain(self, equation: str, variable: str = "x") -> dict:
         reference = self.verifier.solve_reference(equation, variable)
@@ -42,35 +41,25 @@ class AIExplanationService:
 
             try:
                 verification = self.verifier.verify(
-                    equation,
-                    candidate_expression,
-                    variable,
+                    equation_str=equation,
+                    candidate_expression_str=candidate_expression,
+                    variable_str=variable,
+                    reference_expression_str=reference["expression_str"],
                 )
             except VerificationError as exc:
-                verification = {
-                    "verified": False,
-                    "score": 0.0,
-                    "symbolic": {"passed": False, "residual": None},
-                    "numerical": {
-                        "passed": False,
-                        "checked_points": 0,
-                        "max_abs_residual": None,
-                    },
-                    "generality": {"passed": False},
-                    "reasons": [str(exc)],
-                }
+                verification = self._verification_error_payload(str(exc))
 
             last_verification = verification
 
             if verification["verified"]:
                 return {
                     "steps": candidate.get("steps", []),
-                    "solution": candidate.get("solution", reference["expression_str"]),
+                    "solution": candidate.get("solution", ""),
+                    "solution_expression": candidate_expression,
                     "verification": {
                         **verification,
                         "attempts": attempt,
-                        "provider": "ollama",
-                        "model": self.model.model,
+                        "model": getattr(self.model, "model", "ollama"),
                     },
                 }
 
@@ -88,18 +77,51 @@ class AIExplanationService:
         )
 
     @staticmethod
+    def _verification_error_payload(message: str) -> dict:
+        return {
+            "verified": False,
+            "score": 0.0,
+            "symbolic": {"passed": False, "residual": None, "confidence": 0.0},
+            "numerical": {
+                "passed": False,
+                "checked_points": 0,
+                "skipped_points": 0,
+                "max_abs_residual": None,
+                "confidence": 0.0,
+            },
+            "generality": {"passed": False, "confidence": 0.0},
+            "equivalence": {"passed": False, "confidence": 0.0},
+            "domain": {"passed": False, "confidence": 0.0, "warnings": []},
+            "scoring": {"score": 0.0, "components": {}, "weights": {}},
+            "reasons": [message],
+        }
+
+    @staticmethod
     def _build_feedback(candidate_expression, reference_expression, verification):
-        residual = verification.get("symbolic", {}).get("residual")
+        symbolic = verification.get("symbolic", {})
+        numerical = verification.get("numerical", {})
+        generality = verification.get("generality", {})
+        equivalence = verification.get("equivalence", {})
+        domain = verification.get("domain", {})
         reasons = verification.get("reasons") or ["Кандидат не прошёл верификацию."]
 
         return "\n".join(
             [
-                "Предыдущее решение НЕ прошло автоматическую математическую проверку.",
+                "Предыдущее решение НЕ прошло многоуровневую автоматическую проверку.",
                 f"Твоё machine-readable решение: {candidate_expression or '<empty>'}",
                 f"Проверенное SymPy-решение: {reference_expression}",
-                f"Невязка после подстановки: {residual}",
-                "Причины:",
+                f"Итоговый confidence score: {verification.get('score', 0.0)}",
+                f"Символическая невязка: {symbolic.get('residual')}",
+                f"Symbolic passed: {symbolic.get('passed')}",
+                f"Numerical passed: {numerical.get('passed')}; "
+                f"max residual: {numerical.get('max_abs_residual')}",
+                f"Generality passed: {generality.get('passed')}; "
+                f"constants: {generality.get('constants_found')}",
+                f"Reference relation: {equivalence.get('relation')}",
+                f"Domain warnings: {domain.get('warnings')}",
+                "Причины отклонения:",
                 *[f"- {reason}" for reason in reasons],
-                "Исправь математические шаги и верни новый JSON. Не копируй ошибочный вывод.",
+                "Исправь математические шаги и верни новый JSON. "
+                "Не повторяй отклонённое решение без исправлений.",
             ]
         )
