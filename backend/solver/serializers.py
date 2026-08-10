@@ -9,3 +9,8 @@ class SolveSerializer(serializers.Serializer):
 class ExplainSerializer(serializers.Serializer):
     equation = serializers.CharField()
     variable = serializers.CharField(required=False, default='x')
+
+
+class ConsensusSerializer(serializers.Serializer):
+    equation = serializers.CharField()
+    variable = serializers.CharField(required=False, default='x')

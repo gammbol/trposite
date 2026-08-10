@@ -2,8 +2,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import ExplainSerializer, SolveSerializer
+from .serializers import ConsensusSerializer, ExplainSerializer, SolveSerializer
 from .services.ai.explanation_service import AIExplanationError, AIExplanationService
+from .services.consensus import ConsensusEngine
 from .services.job_manager import create_job, get_job
 from .services.solvers.sympy_solver import SympySolver
 
@@ -60,6 +61,27 @@ class ExplainView(APIView):
         except Exception as exc:
             return Response(
                 {"error": f"Не удалось получить AI-объяснение: {exc}"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+
+class ConsensusView(APIView):
+    """Independent multi-solver verification and candidate ranking endpoint."""
+
+    def post(self, request):
+        serializer = ConsensusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        try:
+            result = ConsensusEngine().evaluate(
+                equation=data["equation"],
+                variable=data.get("variable", "x"),
+            )
+            return Response(result)
+        except Exception as exc:
+            return Response(
+                {"error": f"Не удалось выполнить независимую проверку: {exc}"},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 

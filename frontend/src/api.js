@@ -45,6 +45,18 @@ export const explainWithAI = async (data) => {
   return parseResponse(response);
 };
 
+export const verifyWithConsensus = async (data) => {
+  const response = await fetch(`${API_BASE_URL}/consensus/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  return parseResponse(response);
+};
+
 export const getHistory = async () => {
   const response = await axios.get(`${API_BASE_URL}/history/`);
   return response.data;

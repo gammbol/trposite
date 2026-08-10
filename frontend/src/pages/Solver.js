@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { explainWithAI, solveEquation } from '../api';
+import { explainWithAI, solveEquation, verifyWithConsensus } from '../api';
 import { MathComponent } from 'mathjax-react';
 import { motion } from 'framer-motion';
 
@@ -16,6 +16,10 @@ export default function Solver() {
   const [aiSolution, setAiSolution] = useState(null);
   const [aiVerification, setAiVerification] = useState(null);
   const [aiError, setAiError] = useState(null);
+
+  const [consensusLoading, setConsensusLoading] = useState(false);
+  const [consensusResult, setConsensusResult] = useState(null);
+  const [consensusError, setConsensusError] = useState(null);
 
   const resetAI = () => {
     setAiSteps([]);
@@ -37,6 +41,8 @@ export default function Solver() {
     setSteps([]);
     setSolution(null);
     resetAI();
+    setConsensusResult(null);
+    setConsensusError(null);
 
     try {
       const result = await solveEquation({
@@ -77,6 +83,28 @@ export default function Solver() {
       }
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const handleConsensusVerification = async () => {
+    if (!equation.trim() || !solution) {
+      return;
+    }
+
+    setConsensusLoading(true);
+    setConsensusError(null);
+    setConsensusResult(null);
+
+    try {
+      const result = await verifyWithConsensus({
+        equation,
+        variable: 'x',
+      });
+      setConsensusResult(result);
+    } catch (err) {
+      setConsensusError(err.message || 'Не удалось выполнить независимую проверку');
+    } finally {
+      setConsensusLoading(false);
     }
   };
 
@@ -172,6 +200,67 @@ export default function Solver() {
             >
               {aiLoading ? 'ИИ решает и проходит проверку...' : 'Объяснить с помощью ИИ'}
             </button>
+            <button
+              className="consensus-button"
+              type="button"
+              onClick={handleConsensusVerification}
+              disabled={consensusLoading || aiLoading || loading}
+            >
+              {consensusLoading ? 'Сравниваем решатели...' : 'Проверить другими методами'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {consensusError && (
+        <div className="error-box">
+          <strong>Независимая проверка не завершена.</strong>
+          <p>{consensusError}</p>
+        </div>
+      )}
+
+      {consensusResult && (
+        <div className="solution consensus-result">
+          <div className="solution-header">
+            <h3>Независимая проверка решателями</h3>
+            {consensusResult.summary?.consensus_reached && (
+              <span className="verification-badge verified">консенсус достигнут</span>
+            )}
+          </div>
+
+          <div className="verification-summary">
+            <span>Ответили: {consensusResult.summary?.providers_responded || 0}/{consensusResult.summary?.providers_total || 0}</span>
+            <span>Проверено: {consensusResult.summary?.verified_candidates || 0}</span>
+            <span>Групп решений: {consensusResult.summary?.consensus_groups || 0}</span>
+          </div>
+
+          {consensusResult.best_candidate && (
+            <div className="consensus-best">
+              <strong>Лучший подтверждённый кандидат:</strong>
+              <span>{consensusResult.best_candidate.provider}</span>
+              <span>rank {Math.round((consensusResult.best_candidate.rank_score || 0) * 100)}%</span>
+            </div>
+          )}
+
+          <div className="candidate-grid">
+            {(consensusResult.candidates || []).map((candidate) => (
+              <div
+                className={`candidate-card ${candidate.verified ? 'candidate-valid' : 'candidate-invalid'}`}
+                key={candidate.provider}
+              >
+                <div className="candidate-title">
+                  <strong>{candidate.provider}</strong>
+                  <span>{candidate.verified ? '✓ verified' : candidate.status}</span>
+                </div>
+                {candidate.verification && (
+                  <p>Verification: {Math.round((candidate.verification.score || 0) * 100)}%</p>
+                )}
+                {candidate.consensus_support > 0 && (
+                  <p>Consensus support: {Math.round(candidate.consensus_support * 100)}%</p>
+                )}
+                {candidate.error && <p className="candidate-error">{candidate.error}</p>}
+              </div>
+            ))}
           </div>
         </div>
       )}
