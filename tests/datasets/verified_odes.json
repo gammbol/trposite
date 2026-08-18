@@ -1,0 +1,62 @@
+[
+  {
+    "id": "exp_growth",
+    "category": "first_order_linear",
+    "equation": "Derivative(y, x) - y = 0",
+    "solution": "C1*exp(x)"
+  },
+  {
+    "id": "exp_decay",
+    "category": "first_order_linear",
+    "equation": "Derivative(y, x) + y = 0",
+    "solution": "C1*exp(-x)"
+  },
+  {
+    "id": "polynomial_antiderivative",
+    "category": "first_order_direct",
+    "equation": "Derivative(y, x) - 2*x = 0",
+    "solution": "x**2 + C1"
+  },
+  {
+    "id": "gaussian_family",
+    "category": "first_order_separable",
+    "equation": "Derivative(y, x) + 2*x*y = 0",
+    "solution": "C1*exp(-x**2)"
+  },
+  {
+    "id": "sine_antiderivative",
+    "category": "first_order_direct",
+    "equation": "Derivative(y, x) - cos(x) = 0",
+    "solution": "sin(x) + C1"
+  },
+  {
+    "id": "exponential_antiderivative",
+    "category": "first_order_direct",
+    "equation": "Derivative(y, x) - exp(x) = 0",
+    "solution": "exp(x) + C1"
+  },
+  {
+    "id": "logarithmic_family",
+    "category": "first_order_singular_domain",
+    "equation": "Derivative(y, x) - 1/x = 0",
+    "solution": "log(x) + C1"
+  },
+  {
+    "id": "harmonic_oscillator",
+    "category": "second_order_linear",
+    "equation": "Derivative(y, (x, 2)) + y = 0",
+    "solution": "C1*sin(x) + C2*cos(x)"
+  },
+  {
+    "id": "second_order_exponential",
+    "category": "second_order_linear",
+    "equation": "Derivative(y, (x, 2)) - y = 0",
+    "solution": "C1*exp(x) + C2*exp(-x)"
+  },
+  {
+    "id": "free_particle",
+    "category": "second_order_direct",
+    "equation": "Derivative(y, (x, 2)) = 0",
+    "solution": "C1*x + C2"
+  }
+]
