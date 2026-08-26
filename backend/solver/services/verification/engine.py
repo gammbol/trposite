@@ -1,4 +1,4 @@
-from sympy import dsolve, simplify
+from sympy import Eq, dsolve, simplify
 
 from .domain_validator import DomainValidator
 from .equivalence_checker import EquivalenceChecker
@@ -36,8 +36,20 @@ class MultiStageVerificationEngine:
         parsed = self.normalizer.parse_equation(equation_str, variable_str)
 
         try:
-            solution = dsolve(parsed.equation, parsed.function)
+            raw_solution = dsolve(parsed.equation, parsed.function)
+
+            # Some ODEs return several branches. The verifier currently needs a
+            # deterministic reference family, so keep every branch for diagnostics
+            # and use the first equation as the canonical reference.
+            branches = raw_solution if isinstance(raw_solution, (list, tuple)) else [raw_solution]
+            equations = [item for item in branches if isinstance(item, Eq)]
+            if not equations:
+                raise VerificationError("SymPy вернул решение в неподдерживаемом формате.")
+
+            solution = equations[0]
             expression = simplify(solution.rhs)
+        except VerificationError:
+            raise
         except Exception as exc:
             raise VerificationError(f"SymPy не смог получить эталонное решение: {exc}") from exc
 
@@ -46,6 +58,7 @@ class MultiStageVerificationEngine:
             "expression": expression,
             "expression_str": str(expression),
             "solution_str": str(solution),
+            "alternatives": [str(item) for item in equations[1:]],
         }
 
     def verify(

@@ -4,10 +4,11 @@ import math
 class NumericalVerifier:
     """Numerical residual check used as an independent secondary signal."""
 
-    SAMPLE_POINTS = (-3.0, -2.0, -1.0, -0.5, 0.5, 1.0, 2.0, 3.0)
+    SAMPLE_POINTS = (-4.0, -3.0, -2.0, -1.0, -0.5, 0.5, 1.0, 2.0, 3.0, 4.0)
     CONSTANT_VALUES = (0.731, 1.337)
     PARAMETER_VALUE = 1.11111111
     TOLERANCE = 1e-8
+    MIN_CHECKED_POINTS = 6
 
     def verify(self, parsed, candidate_expression, residual_expression) -> dict:
         candidate_constants = sorted(
@@ -48,7 +49,7 @@ class NumericalVerifier:
 
                     checked += 1
                     max_abs_residual = max(max_abs_residual, magnitude)
-                    if len(samples) < 8:
+                    if len(samples) < 10:
                         samples.append(
                             {
                                 "x": point,
@@ -59,12 +60,15 @@ class NumericalVerifier:
                 except Exception:
                     skipped += 1
 
-        passed = checked > 0 and max_abs_residual <= self.TOLERANCE
+        enough_evidence = checked >= self.MIN_CHECKED_POINTS
+        passed = enough_evidence and max_abs_residual <= self.TOLERANCE
 
         return {
             "passed": passed,
             "checked_points": checked,
             "skipped_points": skipped,
+            "minimum_required_points": self.MIN_CHECKED_POINTS,
+            "enough_evidence": enough_evidence,
             "max_abs_residual": float(max_abs_residual) if checked else None,
             "tolerance": self.TOLERANCE,
             "samples": samples,

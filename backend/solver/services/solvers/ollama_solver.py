@@ -1,4 +1,5 @@
 import json
+import os
 import re
 
 import requests
@@ -8,9 +9,33 @@ from .base_solver import BaseSolver
 
 class OllamaSolver(BaseSolver):
     def __init__(self):
-        self.url = "http://localhost:11434/api/generate"
-        self.model = "llama3"
-        self.timeout = 180
+        self.base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+        self.url = f"{self.base_url}/api/generate"
+        self.model = os.getenv("OLLAMA_MODEL", "llama3")
+        self.timeout = float(os.getenv("OLLAMA_TIMEOUT", "180"))
+        self.healthcheck_timeout = float(os.getenv("OLLAMA_HEALTHCHECK_TIMEOUT", "1.5"))
+
+    def healthcheck(self) -> tuple[bool, str | None]:
+        """Fast availability probe used before expensive consensus runs."""
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/tags",
+                timeout=self.healthcheck_timeout,
+            )
+            response.raise_for_status()
+            payload = response.json()
+            models = {
+                item.get("name", "").split(":", 1)[0]
+                for item in payload.get("models", [])
+            }
+            requested = self.model.split(":", 1)[0]
+            if models and requested not in models:
+                return False, f"Ollama запущена, но модель '{self.model}' не установлена."
+            return True, None
+        except requests.RequestException as exc:
+            return False, f"Ollama недоступна: {exc}"
+        except (TypeError, ValueError, KeyError) as exc:
+            return False, f"Ollama вернула некорректный healthcheck-ответ: {exc}"
 
     def _request(self, prompt):
         response = requests.post(
@@ -153,34 +178,53 @@ SymPy уже получил общее решение:
 
     @staticmethod
     def fix_json(text):
+        # Conservative repairs for common LLM formatting errors. Never attempt
+        # to rewrite string contents because that can corrupt LaTeX.
         text = re.sub(r'}\s*{', '},{', text)
         text = re.sub(r',\s*}', '}', text)
         text = re.sub(r',\s*]', ']', text)
         return text
 
+    @staticmethod
+    def _raw_decode_first_object(text: str):
+        """
+        Decode the first complete JSON object with JSONDecoder instead of manual
+        brace counting. This correctly handles braces occurring inside strings,
+        e.g. LaTeX expressions such as ``\\left\\{{ ... \\right\\}}``.
+        """
+        decoder = json.JSONDecoder()
+        for index, char in enumerate(text):
+            if char != "{":
+                continue
+            try:
+                payload, _ = decoder.raw_decode(text[index:])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(payload, dict):
+                return payload
+        raise json.JSONDecodeError("No complete JSON object found", text, 0)
+
     def extract_json(self, text):
+        if not isinstance(text, str) or not text.strip():
+            raise ValueError("Ollama вернула пустой JSON payload.")
+
+        stripped = text.strip()
         try:
-            parsed = json.loads(text)
+            parsed = json.loads(stripped)
             if isinstance(parsed, dict):
                 return parsed
         except json.JSONDecodeError:
             pass
 
-        bracket_count = 0
-        json_start = None
-
-        for index, char in enumerate(text):
-            if char == "{":
-                if json_start is None:
-                    json_start = index
-                bracket_count += 1
-            elif char == "}" and json_start is not None:
-                bracket_count -= 1
-                if bracket_count == 0:
-                    json_str = text[json_start:index + 1]
-                    try:
-                        return json.loads(json_str)
-                    except json.JSONDecodeError:
-                        return json.loads(self.fix_json(json_str))
-
-        raise ValueError(f"Не удалось извлечь JSON из ответа Ollama: {text}")
+        try:
+            return self._raw_decode_first_object(stripped)
+        except json.JSONDecodeError:
+            fixed = self.fix_json(stripped)
+            try:
+                return self._raw_decode_first_object(fixed)
+            except json.JSONDecodeError as exc:
+                preview = stripped[:500]
+                raise ValueError(
+                    "Не удалось извлечь корректный JSON из ответа Ollama. "
+                    f"Начало ответа: {preview}"
+                ) from exc

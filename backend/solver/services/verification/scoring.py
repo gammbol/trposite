@@ -9,19 +9,29 @@ class VerificationScorer:
         "domain": 0.10,
     }
 
-    def calculate(self, checks: dict) -> dict:
-        components = {
-            name: float(checks[name].get("confidence", 1.0 if checks[name].get("passed") else 0.0))
-            for name in self.WEIGHTS
-        }
+    @staticmethod
+    def _clamp(value) -> float:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return 0.0
+        return max(0.0, min(1.0, numeric))
 
+    def calculate(self, checks: dict) -> dict:
+        components = {}
+        for name in self.WEIGHTS:
+            check = checks.get(name, {})
+            fallback = 1.0 if check.get("passed") else 0.0
+            components[name] = self._clamp(check.get("confidence", fallback))
+
+        weight_sum = sum(self.WEIGHTS.values()) or 1.0
         raw_score = sum(
             self.WEIGHTS[name] * components[name]
             for name in self.WEIGHTS
-        )
+        ) / weight_sum
 
         return {
-            "score": round(raw_score, 3),
+            "score": round(self._clamp(raw_score), 3),
             "components": {name: round(value, 3) for name, value in components.items()},
             "weights": self.WEIGHTS.copy(),
         }

@@ -46,7 +46,7 @@ class OllamaCandidateProvider(CandidateProvider):
         self.solver = solver or OllamaSolver()
 
     def available(self):
-        return True, None
+        return self.solver.healthcheck()
 
     def solve(self, equation: str, variable: str) -> SolverCandidate:
         payload = self.solver.solve(equation, variable)
@@ -70,6 +70,8 @@ class OpenAICompatibleCandidateProvider(CandidateProvider):
         self.model = model
         self.api_key = api_key
         self.base_url = base_url
+        self.timeout = float(os.getenv("LLM_PROVIDER_TIMEOUT", "45"))
+        self.max_retries = int(os.getenv("LLM_PROVIDER_MAX_RETRIES", "1"))
 
     def available(self):
         if not self.api_key:
@@ -103,24 +105,29 @@ Do not include y({variable})= in solution_expression.
 
     @staticmethod
     def _parse_json(content: str) -> dict:
+        if not content or not content.strip():
+            raise ValueError("LLM response is empty.")
+
+        stripped = content.strip()
         try:
-            return json.loads(content)
+            payload = json.loads(stripped)
+            if isinstance(payload, dict):
+                return payload
         except json.JSONDecodeError:
-            start = content.find("{")
-            if start < 0:
-                raise ValueError("LLM response does not contain JSON.")
+            pass
 
-            depth = 0
-            for index in range(start, len(content)):
-                char = content[index]
-                if char == "{":
-                    depth += 1
-                elif char == "}":
-                    depth -= 1
-                    if depth == 0:
-                        return json.loads(content[start:index + 1])
+        decoder = json.JSONDecoder()
+        for index, char in enumerate(stripped):
+            if char != "{":
+                continue
+            try:
+                payload, _ = decoder.raw_decode(stripped[index:])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(payload, dict):
+                return payload
 
-            raise ValueError("LLM response contains incomplete JSON.")
+        raise ValueError("LLM response does not contain a complete JSON object.")
 
     def solve(self, equation: str, variable: str) -> SolverCandidate:
         try:
@@ -128,7 +135,11 @@ Do not include y({variable})= in solution_expression.
         except ImportError as exc:
             raise RuntimeError("Package 'openai' is not installed.") from exc
 
-        kwargs = {"api_key": self.api_key}
+        kwargs = {
+            "api_key": self.api_key,
+            "timeout": self.timeout,
+            "max_retries": self.max_retries,
+        }
         if self.base_url:
             kwargs["base_url"] = self.base_url
         client = OpenAI(**kwargs)
