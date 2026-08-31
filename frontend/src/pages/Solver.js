@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { explainWithAI, solveEquation, verifyWithConsensus } from '../api';
-import { MathComponent } from 'mathjax-react';
-import { motion } from 'framer-motion';
+import MathFormula from '../components/MathFormula';
 
 export default function Solver() {
   const [equation, setEquation] = useState('');
@@ -10,7 +9,6 @@ export default function Solver() {
   const [showHelp, setShowHelp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
   const [aiLoading, setAiLoading] = useState(false);
   const [aiSteps, setAiSteps] = useState([]);
   const [aiSolution, setAiSolution] = useState(null);
@@ -109,11 +107,7 @@ export default function Solver() {
   };
 
   return (
-    <motion.div
-      className="page"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-    >
+    <div className="page">
       <h2>Решение дифференциальных уравнений</h2>
       <p className="solver-subtitle">
         Сначала система быстро получает решение через SymPy. После этого его
@@ -132,7 +126,6 @@ export default function Solver() {
           <button className="primary-button" type="submit" disabled={loading || aiLoading}>
             {loading ? 'Решаем...' : 'Решить'}
           </button>
-
           <button
             className="secondary-button"
             type="button"
@@ -166,12 +159,11 @@ export default function Solver() {
             <h3>Пошаговое решение SymPy</h3>
             <span className="verification-badge verified">быстрое решение</span>
           </div>
-
           <ol>
             {steps.map((step, index) => (
               <li key={index}>
                 {step.type === 'math' ? (
-                  <MathComponent tex={step.content} display={true} />
+                  <MathFormula tex={step.content} />
                 ) : (
                   <p>{step.content}</p>
                 )}
@@ -184,8 +176,7 @@ export default function Solver() {
       {solution && (
         <div className="solution final">
           <h3>Ответ:</h3>
-          <MathComponent tex={solution} display={true} />
-
+          <MathFormula tex={solution} />
           <div className="ai-action">
             <p>
               Нужен подробный разбор? Локальная модель объяснит решение, а
@@ -227,13 +218,11 @@ export default function Solver() {
               <span className="verification-badge verified">консенсус достигнут</span>
             )}
           </div>
-
           <div className="verification-summary">
             <span>Ответили: {consensusResult.summary?.providers_responded || 0}/{consensusResult.summary?.providers_total || 0}</span>
             <span>Проверено: {consensusResult.summary?.verified_candidates || 0}</span>
             <span>Групп решений: {consensusResult.summary?.consensus_groups || 0}</span>
           </div>
-
           {consensusResult.best_candidate && (
             <div className="consensus-best">
               <strong>Лучший подтверждённый кандидат:</strong>
@@ -241,7 +230,6 @@ export default function Solver() {
               <span>rank {Math.round((consensusResult.best_candidate.rank_score || 0) * 100)}%</span>
             </div>
           )}
-
           <div className="candidate-grid">
             {(consensusResult.candidates || []).map((candidate) => (
               <div
@@ -280,7 +268,6 @@ export default function Solver() {
               <span className="verification-badge verified">проверено</span>
             )}
           </div>
-
           {aiVerification && (
             <div className="verification-summary">
               <span>Confidence: {Math.round((aiVerification.score || 0) * 100)}%</span>
@@ -288,27 +275,25 @@ export default function Solver() {
               <span>Модель: {aiVerification.model || 'ollama'}</span>
             </div>
           )}
-
           <ol>
             {aiSteps.map((step, index) => (
               <li key={index}>
                 {step.type === 'math' ? (
-                  <MathComponent tex={step.content} display={true} />
+                  <MathFormula tex={step.content} />
                 ) : (
                   <p>{step.content}</p>
                 )}
               </li>
             ))}
           </ol>
-
           {aiSolution && (
             <div className="ai-final-answer">
               <h4>Итог ИИ:</h4>
-              <MathComponent tex={aiSolution} display={true} />
+              <MathFormula tex={aiSolution} />
             </div>
           )}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

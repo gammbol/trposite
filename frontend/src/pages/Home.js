@@ -1,12 +1,10 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 export default function Home() {
   const navigate = useNavigate();
-
   return (
-    <motion.div className="page" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <div className="page">
       <section className="hero">
         <h1>Добро пожаловать в DiffSolver</h1>
         <p>
@@ -25,7 +23,6 @@ export default function Home() {
           </button>
         </div>
       </section>
-    </motion.div>
+    </div>
   );
 }
-
