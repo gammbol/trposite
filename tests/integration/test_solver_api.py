@@ -10,13 +10,13 @@ def api_client():
     return APIClient()
 
 
+@pytest.mark.django_db
 def test_solve_endpoint_returns_fast_sympy_result(api_client):
     response = api_client.post(
         "/api/solve/",
         {"equation": "Derivative(y, x) - y = 0", "variable": "x"},
         format="json",
     )
-
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "done"

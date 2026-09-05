@@ -180,8 +180,8 @@ export default function Solver() {
           <div className="ai-action">
             <p>
               Нужен подробный разбор? Локальная модель объяснит решение, а
-              backend автоматически проверит её итог и при ошибке попросит ИИ
-              исправить решение.
+              backend сохранит проверенный SymPy-ответ неизменным и нормализует
+              математические шаги объяснения перед отображением.
             </p>
             <button
               className="ai-button"
@@ -189,7 +189,7 @@ export default function Solver() {
               onClick={handleAIExplanation}
               disabled={aiLoading || loading}
             >
-              {aiLoading ? 'ИИ решает и проходит проверку...' : 'Объяснить с помощью ИИ'}
+              {aiLoading ? 'ИИ готовит объяснение...' : 'Объяснить с помощью ИИ'}
             </button>
             <button
               className="consensus-button"
@@ -265,12 +265,12 @@ export default function Solver() {
           <div className="solution-header">
             <h3>Подробное объяснение ИИ</h3>
             {aiVerification?.verified && (
-              <span className="verification-badge verified">проверено</span>
+              <span className="verification-badge verified">итог проверен</span>
             )}
           </div>
           {aiVerification && (
             <div className="verification-summary">
-              <span>Confidence: {Math.round((aiVerification.score || 0) * 100)}%</span>
+              <span>Проверка ответа: {Math.round((aiVerification.score || 0) * 100)}%</span>
               <span>Попыток: {aiVerification.attempts || 1}</span>
               <span>Модель: {aiVerification.model || 'ollama'}</span>
             </div>
@@ -288,7 +288,7 @@ export default function Solver() {
           </ol>
           {aiSolution && (
             <div className="ai-final-answer">
-              <h4>Итог ИИ:</h4>
+              <h4>Проверенный итог SymPy:</h4>
               <MathFormula tex={aiSolution} />
             </div>
           )}

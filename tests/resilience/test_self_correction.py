@@ -18,14 +18,17 @@ class CorrectingModel:
         self.feedback_seen.append(correction_feedback)
 
         if self.calls == 1:
-            expression = "C1*x"
+            # Simulates exactly the class of broken JSON/LaTeX presentation that
+            # produced "rac" / "ext" in the browser.
+            math_content = "\\frac{1}{2}"
         else:
-            expression = "C1*exp(x)"
+            math_content = f"y = {verified_solution}"
 
         return {
-            "steps": [{"type": "text", "content": f"attempt {self.calls}"}],
-            "solution": expression,
-            "solution_expression": expression,
+            "steps": [
+                {"type": "text", "content": "Объясняем проверенное решение."},
+                {"type": "math", "content": math_content},
+            ],
         }
 
 
@@ -34,9 +37,10 @@ class AlwaysWrongModel(CorrectingModel):
         self.calls += 1
         self.feedback_seen.append(kwargs.get("correction_feedback"))
         return {
-            "steps": [],
-            "solution": "C1*x",
-            "solution_expression": "C1*x",
+            "steps": [
+                {"type": "text", "content": "Пытаемся объяснить решение."},
+                {"type": "math", "content": "\\frac{1}{2}"},
+            ],
         }
 
 
@@ -47,9 +51,14 @@ def test_invalid_first_attempt_is_corrected_on_second(simple_equation):
 
     assert result["verification"]["verified"] is True
     assert result["verification"]["attempts"] == 2
+    assert result["verification"]["scope"] == "final_solution"
+    assert result["verification"]["explanation_format_verified"] is True
     assert model.calls == 2
     assert model.feedback_seen[0] is None
-    assert "НЕ прошло" in model.feedback_seen[1]
+    assert "формат" in model.feedback_seen[1].lower()
+    assert result["solution_expression"] == "C1*exp(x)"
+    assert result["steps"][1]["type"] == "math"
+    assert "\\frac" not in result["steps"][1]["content"] or "C" in result["steps"][1]["content"]
 
 
 def test_correction_loop_is_bounded(simple_equation):

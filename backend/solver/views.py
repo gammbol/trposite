@@ -2,6 +2,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from history.models import Solution
+
 from .serializers import ConsensusSerializer, ExplainSerializer, SolveSerializer
 from .services.ai.explanation_service import AIExplanationError, AIExplanationService
 from .services.consensus import ConsensusEngine
@@ -9,8 +11,19 @@ from .services.job_manager import create_job, get_job
 from .services.solvers.sympy_solver import SympySolver
 
 
-class SolveView(APIView):
-    """Fast deterministic solving path. The public endpoint always uses SymPy."""
+class PublicAPIView(APIView):
+    """Base class for the public local API.
+
+    Explicitly avoids Django session authentication so logging into /admin/
+    cannot make SPA requests suddenly require CSRF tokens.
+    """
+
+    authentication_classes = []
+    permission_classes = []
+
+
+class SolveView(PublicAPIView):
+    """Fast deterministic solve path. Every successful result is persisted."""
 
     def post(self, request):
         serializer = SolveSerializer(data=request.data)
@@ -23,20 +36,30 @@ class SolveView(APIView):
 
         try:
             result = SympySolver().solve(equation, variable)
-            job["status"] = "done"
-            job["result"] = result
-            return Response(job)
         except Exception as exc:
             job["status"] = "error"
             job["error"] = str(exc)
-            return Response(
-                job,
-                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            return Response(job, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+        try:
+            history_entry = Solution.objects.create(
+                equation=equation,
+                solution=result.get("solution", ""),
+                steps=result.get("steps", []),
             )
+        except Exception as exc:
+            job["status"] = "error"
+            job["error"] = f"Решение получено, но не удалось сохранить историю: {exc}"
+            return Response(job, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        job["status"] = "done"
+        job["result"] = result
+        job["history_id"] = history_entry.pk
+        return Response(job)
 
 
-class ExplainView(APIView):
-    """AI explanation path with independent verification and self-correction."""
+class ExplainView(PublicAPIView):
+    """AI explanation path with independent verification/self-correction."""
 
     def post(self, request):
         serializer = ExplainSerializer(data=request.data)
@@ -65,7 +88,7 @@ class ExplainView(APIView):
             )
 
 
-class ConsensusView(APIView):
+class ConsensusView(PublicAPIView):
     """Independent multi-solver verification and candidate ranking endpoint."""
 
     def post(self, request):
@@ -86,7 +109,7 @@ class ConsensusView(APIView):
             )
 
 
-class ResultView(APIView):
+class ResultView(PublicAPIView):
     def get(self, request, job_id):
         job = get_job(job_id)
         if not job:

@@ -5,23 +5,24 @@ export default function MathFormula({ tex, inline = false }) {
 
   useEffect(() => {
     const container = containerRef.current;
+    if (!container || !tex) return undefined;
+
     let cancelled = false;
     let retryTimer = null;
+    let retries = 0;
 
-    if (!container || !tex) {
-      return undefined;
-    }
+    // Always show a readable fallback immediately. If MathJax is unavailable,
+    // history/solver pages still display the stored solution instead of an
+    // empty element forever.
+    container.textContent = tex;
 
     const render = async () => {
-      if (cancelled) {
-        return;
-      }
+      if (cancelled) return;
 
       const mathJax = window.MathJax;
       if (!mathJax || typeof mathJax.typesetPromise !== 'function') {
-        // MathJax is loaded with a defer script before the CRA bundle. This is
-        // only a safety fallback for unusually slow script loading.
-        retryTimer = window.setTimeout(render, 50);
+        retries += 1;
+        if (retries <= 100) retryTimer = window.setTimeout(render, 50);
         return;
       }
 
@@ -34,6 +35,7 @@ export default function MathFormula({ tex, inline = false }) {
       try {
         await mathJax.typesetPromise([container]);
       } catch (error) {
+        container.textContent = tex;
         console.error('MathJax typesetting failed:', error);
       }
     };
@@ -42,20 +44,15 @@ export default function MathFormula({ tex, inline = false }) {
 
     return () => {
       cancelled = true;
-      if (retryTimer !== null) {
-        window.clearTimeout(retryTimer);
-      }
+      if (retryTimer !== null) window.clearTimeout(retryTimer);
       if (window.MathJax && typeof window.MathJax.typesetClear === 'function') {
         window.MathJax.typesetClear([container]);
       }
     };
   }, [tex, inline]);
 
-  if (!tex) {
-    return null;
-  }
-
+  if (!tex) return null;
   return inline
-    ? <span ref={containerRef} className="math-formula" />
-    : <div ref={containerRef} className="math-formula" />;
+    ? <span ref={containerRef} className="math-formula">{tex}</span>
+    : <div ref={containerRef} className="math-formula">{tex}</div>;
 }

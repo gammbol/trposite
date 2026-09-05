@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from sympy import (
+    Basic,
     Derivative,
     Eq,
     Function,
@@ -54,7 +55,6 @@ class SolutionNormalizer:
 
         variable = symbols(variable_str)
         function = Function("y")(variable)
-
         local_dict = {
             variable_str: variable,
             "x": variable,
@@ -67,7 +67,6 @@ class SolutionNormalizer:
             "tan": tan,
             "sqrt": sqrt,
         }
-
         try:
             lhs_raw, rhs_raw = equation_str.split("=", 1)
             lhs = parse_expr(lhs_raw.strip(), local_dict=local_dict)
@@ -78,7 +77,6 @@ class SolutionNormalizer:
         equation = Eq(lhs, rhs)
         residual_expression = lhs - rhs
         parameters = residual_expression.free_symbols - {variable}
-
         try:
             order = int(ode_order(equation, function))
         except Exception:
@@ -101,7 +99,6 @@ class SolutionNormalizer:
         normalized = original
         if "=" in normalized:
             normalized = normalized.split("=", 1)[1].strip()
-
         normalized = normalized.replace("^", "**")
         variable = symbols(variable_str)
 
@@ -127,13 +124,26 @@ class SolutionNormalizer:
                 f"Не удалось разобрать solution_expression '{original}': {exc}"
             ) from exc
 
+        # parse_expr can resolve short names such as "N" or "O" to SymPy
+        # functions/classes instead of mathematical expressions.  Those values
+        # are valid Python objects, but they are not candidates that the
+        # verification pipeline can safely inspect (e.g. via free_symbols).
+        if not isinstance(expression, Basic):
+            raise VerificationError(
+                f"solution_expression '{original}' не является математическим выражением."
+            )
+
         canonical = self.canonicalize(expression)
+        if not isinstance(canonical, Basic):
+            raise VerificationError(
+                f"solution_expression '{original}' не удалось нормализовать как математическое выражение."
+            )
+
         constants = {
             symbol
             for symbol in canonical.free_symbols
             if symbol != variable and str(symbol).startswith("C")
         }
-
         return NormalizedCandidate(
             raw=original,
             expression=expression,

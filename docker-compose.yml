@@ -10,6 +10,7 @@ services:
       DJANGO_DEBUG: "${DJANGO_DEBUG:-0}"
       DJANGO_ALLOWED_HOSTS: "${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend}"
       DJANGO_SECRET_KEY: "${DJANGO_SECRET_KEY:-django-insecure-container-development-key}"
+      APP_PORT: "${APP_PORT:-8080}"
       SQLITE_PATH: /data/db.sqlite3
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: "${OLLAMA_MODEL:-llama3}"

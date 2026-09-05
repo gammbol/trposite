@@ -270,3 +270,148 @@ input[type="text"] {
   color: #9c2929;
   word-break: break-word;
 }
+
+/* History */
+.history-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.history-clear-button,
+.history-delete-button,
+.history-expand-button {
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.history-clear-button {
+  padding: 0.7rem 1rem;
+  border: 1px solid #c62828;
+  background: #fff;
+  color: #a61f1f;
+  white-space: nowrap;
+}
+
+.history-clear-button:hover {
+  background: #fff2f2;
+}
+
+.history-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.history-card {
+  padding: 1.35rem;
+  border: 1px solid #dedede;
+  border-radius: 10px;
+  background: #f9f9f9;
+}
+
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.history-card h3 {
+  margin: 0.45rem 0 0;
+  font-size: 1.08rem;
+  word-break: break-word;
+}
+
+.history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: #6b6b6b;
+  font-size: 0.85rem;
+}
+
+.history-delete-button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d9a5a5;
+  background: #fff;
+  color: #9c2929;
+}
+
+.history-delete-button:hover {
+  background: #fff2f2;
+}
+
+.history-answer {
+  margin: 1.1rem 0;
+  padding: 1rem;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.history-answer > span {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #666;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.history-expand-button {
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #b8cfe0;
+  background: #eef6fc;
+  color: #005a9e;
+}
+
+.history-expand-button:hover {
+  background: #e2f0fa;
+}
+
+.history-steps {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+}
+
+.history-steps li {
+  margin-bottom: 0.8rem;
+}
+
+.history-state,
+.history-empty {
+  padding: 2rem;
+  border-radius: 10px;
+  background: #f7f7f7;
+  text-align: center;
+  color: #555;
+}
+
+.history-empty h3 {
+  margin-top: 0;
+  color: #1b1b1b;
+}
+
+.history-clear-button:disabled,
+.history-delete-button:disabled,
+.history-expand-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 700px) {
+  .history-heading,
+  .history-card-header {
+    flex-direction: column;
+  }
+
+  .history-clear-button,
+  .history-delete-button {
+    width: 100%;
+  }
+}

@@ -32,7 +32,6 @@ wait_for_ollama() {
         fi
         sleep 2
     done
-
     echo "[trposite] Ollama did not become ready in time" >&2
     return 1
 }
@@ -50,8 +49,9 @@ case "$ACTION" in
         pull_model
         echo
         echo "Trposite is running: http://localhost:${APP_PORT:-8080}"
+        echo "History:             http://localhost:${APP_PORT:-8080}/history"
+        echo "Django admin:        http://localhost:${APP_PORT:-8080}/admin/"
         ;;
-
     rebuild)
         ensure_env
         compose build --no-cache
@@ -60,11 +60,9 @@ case "$ACTION" in
         echo
         echo "Trposite is running: http://localhost:${APP_PORT:-8080}"
         ;;
-
     down)
         compose down
         ;;
-
     clean)
         echo "This removes containers AND persistent SQLite/Ollama volumes."
         read -r -p "Continue? [y/N] " answer
@@ -72,54 +70,48 @@ case "$ACTION" in
             compose down -v --remove-orphans
         fi
         ;;
-
     restart)
         compose restart
         ;;
-
     logs)
         compose logs -f --tail=200
         ;;
-
     status|ps)
         compose ps
         ;;
-
     shell)
         compose exec backend /bin/sh
         ;;
-
     model)
         ensure_env
         compose up -d ollama
         pull_model
         ;;
-
     migrate)
         compose exec backend python manage.py migrate
         ;;
-
+    admin|superuser)
+        compose exec backend python manage.py createsuperuser
+        ;;
     check)
         compose exec backend python manage.py check
         ;;
-
     *)
         cat <<USAGE
 Usage: $0 [command]
-
 Commands:
-  up       Build and start frontend, backend and Ollama (default)
-  rebuild  Rebuild all images without cache and restart
-  down     Stop the stack without deleting persistent data
-  clean    Stop the stack and delete SQLite/Ollama volumes
-  restart  Restart running services
-  logs     Follow logs from all services
-  status   Show container status
-  shell    Open a shell inside the Django container
-  model    Start Ollama and pull the configured model
-  migrate  Run Django migrations manually
-  check    Run 'python manage.py check' in the backend container
-
+  up         Build and start frontend, backend and Ollama (default)
+  rebuild    Rebuild all images without cache and restart
+  down       Stop the stack without deleting persistent data
+  clean      Stop the stack and delete SQLite/Ollama volumes
+  restart    Restart running services
+  logs       Follow logs from all services
+  status     Show container status
+  shell      Open a shell inside the Django container
+  model      Start Ollama and pull the configured model
+  migrate    Run Django migrations manually
+  admin      Create a Django admin superuser
+  check      Run 'python manage.py check' in the backend container
 Environment:
   APP_PORT=8080      Public web port
   OLLAMA_MODEL=llama3
